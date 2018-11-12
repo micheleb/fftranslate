@@ -17,6 +17,21 @@ const onTranslate = m => {
       .catch(e => console.err(`rejected, ${e}`));
 };
 
+const onSelect = s => {
+  setTimeout(() => {
+    const bounds = window.getSelection().getRangeAt(0).getBoundingClientRect();
+    const absoluteLeft = bounds.left + window.scrollX;
+    const absoluteTop = bounds.top + window.scrollY;
+    const url = browser.extension.getURL('img/button.png');
+    console.log('left: ' + absoluteLeft + ', top: ' + absoluteTop);
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = `position:absolute;width:32px;height:32px;top:${absoluteTop - 32}px;left:${absoluteLeft}px`;
+    document.body.appendChild(img);
+  }, 500);
+};
+
 browser.runtime.onMessage.addListener(onTranslate);
+window.onselectstart = onSelect;
 
 console.log('loaded!');

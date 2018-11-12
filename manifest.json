@@ -15,5 +15,6 @@
     "background": {
         "scripts": ["background-script.js"]
     },
-    "permissions": ["menus", "https://translate.googleapis.com/*"]
+    "permissions": ["activeTab", "menus", "https://translate.googleapis.com/*"],
+    "web_accessible_resources": ["img/button.png"]
 }
