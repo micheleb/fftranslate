@@ -1,3 +1,9 @@
+const BTN_IMG_SIZE = 32;
+const BTN_IMG_PADDING = 2;
+const BTN_SIZE = BTN_IMG_SIZE + 2 * BTN_IMG_PADDING;
+var selection;
+var selectedText;
+
 const getTranslateUrl = text =>
   `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURI(text)}`;
 
@@ -7,14 +13,19 @@ const showTranslation = (selection, translated) => {
   const top = bounds.top + window.scrollY;
   const bottom = bounds.bottom + window.scrollY;
   const left = bounds.left + window.scrollX;
+
   const div = document.createElement('div');
   div.id = 'fftranslate-popup';
   div.innerHTML = translated;
+  // add the (invisible) popup to the DOM to measure it...
   div.style.cssText = 'opacity: 0;';
   document.body.appendChild(div);
+
+  // so that we can center it with the selection
   const w = div.offsetWidth;
   const h = div.offsetHeight;
   const over = top - h >= window.scrollY;
+  // ...making it visible at the same time
   div.style.cssText = `opacity: 1; top: ${over ? top - h : bottom + 10}px;
     left: ${left + (bounds.right - bounds.left) / 2 - w / 2}px;
   `;
@@ -27,6 +38,7 @@ const onTranslate = m => {
   if (selectedText)
     fetch(url)
       .then(r => r.json().then(v => {
+        // google splits the translated text into sentences, for some reason...
         const translated = v[0].map(t => t[0])
           .reduce((acc, cur) => `${acc} ${cur}`, '');
         showTranslation(selection, translated);
@@ -55,24 +67,23 @@ const onButtonClicked = e => {
 };
 
 const showButton = () => {
-
   selection = window.getSelection();
   const range = selection.getRangeAt(0);
 
-  if (range.startOffset - range.endOffset === 0) {
-    return;
-  }
+  // check if something was indeed selected
+  if (range.startOffset - range.endOffset === 0) return;
 
   selectedText = selection.toString().trim();
 
+  // center the button with selection
   const bounds = range.getBoundingClientRect();
   const left = bounds.left + window.scrollX + (bounds.right - bounds.left) / 2;
   const absoluteTop = bounds.top + window.scrollY;
-  const buttonTop = Math.max(window.scrollY, absoluteTop - 40);
+  const buttonTop = Math.max(window.scrollY, absoluteTop - BTN_SIZE);
 
   const div = document.createElement('div');
   div.id = 'fftranslate-button';
-  div.style.cssText = `top: ${buttonTop}px; left: ${left - 20}px;`;
+  div.style.cssText = `top: ${buttonTop}px; left: ${left - BTN_SIZE / 2}px;`;
   div.onclick = onButtonClicked;
 
   const img = document.createElement('img');
@@ -82,8 +93,6 @@ const showButton = () => {
   document.body.appendChild(div);
 }
 
-var selection;
-var selectedText;
 browser.runtime.onMessage.addListener(onTranslate);
 document.onmousedown = onMouseDown;
 document.onmouseup = showButton;
@@ -96,18 +105,18 @@ const css = `
     position: absolute;
     line-height: 0;
     box-shadow: 0 3px 6px #ccc;
-    border-radius: 16px;
+    border-radius: ${BTN_IMG_SIZE / 2}px;
     z-index: 9999;
   }
   #fftranslate-button:hover {
     cursor: pointer;
   }
   #fftranslate-img {
-    width: 32px;
-    height: 32px;
+    width: ${BTN_IMG_SIZE}px;
+    height: ${BTN_IMG_SIZE}px;
     background-color: white;
-    padding: 2px;
-    border-radius: 16px;
+    padding: ${BTN_IMG_PADDING}px;
+    border-radius: ${BTN_IMG_SIZE / 2}px;
   }
   #fftranslate-popup {
     position: absolute;
