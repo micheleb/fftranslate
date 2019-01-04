@@ -5,7 +5,7 @@ const showTranslation = (selection, translated) => {
   window.alert(translated);
   // TODO show a popup instead, here are the selection bounding box coords
   const bounds = selection.getRangeAt(0).getBoundingClientRect();
-  console.log(`${bounds.left},${bounds.top} ${bounds.right},${bounds.bottom}`);
+  // console.log(`${bounds.left},${bounds.top} ${bounds.right},${bounds.bottom}`);
 };
 
 const onTranslate = m => {
@@ -19,6 +19,7 @@ const onTranslate = m => {
 
 const onButtonClicked = e => {
   e.preventDefault();
+  hideFFTranslateButtons();
   onTranslate();
 };
 
