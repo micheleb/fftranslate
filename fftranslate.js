@@ -10,24 +10,27 @@ const showTranslation = (selection, translated) => {
   const div = document.createElement('div');
   div.id = 'fftranslate-popup';
   div.innerHTML = translated;
-  div.style.cssText = 'top: -9999px; left: 9999px; max-width: ${bounds.right - bounds.left}px';
+  div.style.cssText = 'opacity: 0;';
   document.body.appendChild(div);
   const w = div.offsetWidth;
   const h = div.offsetHeight;
   const over = top - h >= window.scrollY;
-  console.log(`left: ${left}, w: ${w}, b.r: ${bounds.right}, b.l: ${bounds.left}`);
-  div.style.cssText = `top: ${over ? top - h : bottom + 10}px;
+  div.style.cssText = `opacity: 1; top: ${over ? top - h : bottom + 10}px;
     left: ${left + (bounds.right - bounds.left) / 2 - w / 2}px;
   `;
-  console.log(`${bounds.left},${bounds.top} ${bounds.right},${bounds.bottom}`);
   hide('button');
 };
 
 const onTranslate = m => {
   // console.log(`Translating: "${selectedText}"`);
+  const url = getTranslateUrl(selectedText);
   if (selectedText)
-    fetch(getTranslateUrl(selectedText))
-      .then(r => r.json().then(v => showTranslation(selection, v[0][0][0])))
+    fetch(url)
+      .then(r => r.json().then(v => {
+        const translated = v[0].map(t => t[0])
+          .reduce((acc, cur) => `${acc} ${cur}`, '');
+        showTranslation(selection, translated);
+      }))
       .catch(e => console.err(`rejected, ${e}`));
 };
 
@@ -63,13 +66,13 @@ const showButton = () => {
   selectedText = selection.toString().trim();
 
   const bounds = range.getBoundingClientRect();
-  const absoluteLeft = bounds.left + window.scrollX;
+  const left = bounds.left + window.scrollX + (bounds.right - bounds.left) / 2;
   const absoluteTop = bounds.top + window.scrollY;
   const buttonTop = Math.max(window.scrollY, absoluteTop - 40);
 
   const div = document.createElement('div');
   div.id = 'fftranslate-button';
-  div.style.cssText = `top: ${buttonTop}px; left: ${absoluteLeft}px;`;
+  div.style.cssText = `top: ${buttonTop}px; left: ${left - 20}px;`;
   div.onclick = onButtonClicked;
 
   const img = document.createElement('img');
@@ -112,6 +115,8 @@ const css = `
     background-color: #fcfcfc;
     border: 1px solid #ddd;
     padding: 1em;
+    font-size: larger;
+    max-width: 600px;
   }
 `;
 style.appendChild(document.createTextNode(css));
