@@ -9,4 +9,5 @@ any file from this folder, it'll work).
 
 # See it in action
 
-Select something on a page, right-click and select FF translate.
+Select something on a page, and either click on the *beautiful* button that
+pops up, or right-click and select FF translate.
