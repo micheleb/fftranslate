@@ -17,21 +17,56 @@ const onTranslate = m => {
       .catch(e => console.err(`rejected, ${e}`));
 };
 
+const onButtonClicked = e => {
+  e.preventDefault();
+  onTranslate();
+};
+
 const onSelect = s => {
   setTimeout(() => {
     const bounds = window.getSelection().getRangeAt(0).getBoundingClientRect();
     const absoluteLeft = bounds.left + window.scrollX;
     const absoluteTop = bounds.top + window.scrollY;
-    const url = browser.extension.getURL('img/button.png');
-    console.log('left: ' + absoluteLeft + ', top: ' + absoluteTop);
+
+    const div = document.createElement('div');
+    div.id = 'fftranslate-button';
+    div.style.cssText = `top: ${absoluteTop - 32}px; left: ${absoluteLeft}px;`;
+    div.onclick = onButtonClicked;
+
     const img = document.createElement('img');
-    img.src = url;
-    img.style.cssText = `position:absolute;width:32px;height:32px;top:${absoluteTop - 32}px;left:${absoluteLeft}px`;
-    document.body.appendChild(img);
-  }, 500);
+    img.id = 'fftranslate-img';
+    img.src = browser.extension.getURL('img/button.png');
+    div.appendChild(img);
+    document.body.appendChild(div);
+  }, 300);
+};
+
+const hideFFTranslateButtons = () => {
+  const b = document.getElementById('fftranslate-button');
+  if (b) b.remove();
 };
 
 browser.runtime.onMessage.addListener(onTranslate);
-window.onselectstart = onSelect;
+document.onselectstart = onSelect;
+document.onclick = hideFFTranslateButtons;
 
-console.log('loaded!');
+const head = document.getElementsByTagName('head')[0];
+const style = document.createElement('style');
+style.type = 'text/css';
+const css = `
+  #fftranslate-button {
+    position: absolute;
+    line-height: 0;
+    box-shadow: 0 3px 6px #ccc;
+    z-index: 9999;
+  }
+  #fftranslate-button:hover {
+    cursor: pointer;
+  }
+  #fftranslate-img {
+    width: 32px;
+    height: 32px;
+  }
+`;
+style.appendChild(document.createTextNode(css));
+head.appendChild(style);
