@@ -2,10 +2,25 @@ const getTranslateUrl = text =>
   `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURI(text)}`;
 
 const showTranslation = (selection, translated) => {
-  window.alert(translated);
-  // TODO show a popup instead, here are the selection bounding box coords
+  // window.alert(translated);
   const bounds = selection.getRangeAt(0).getBoundingClientRect();
-  // console.log(`${bounds.left},${bounds.top} ${bounds.right},${bounds.bottom}`);
+  const top = bounds.top + window.scrollY;
+  const bottom = bounds.bottom + window.scrollY;
+  const left = bounds.left + window.scrollX;
+  const div = document.createElement('div');
+  div.id = 'fftranslate-popup';
+  div.innerHTML = translated;
+  div.style.cssText = 'top: -9999px; left: 9999px; max-width: ${bounds.right - bounds.left}px';
+  document.body.appendChild(div);
+  const w = div.offsetWidth;
+  const h = div.offsetHeight;
+  const over = top - h >= window.scrollY;
+  console.log(`left: ${left}, w: ${w}, b.r: ${bounds.right}, b.l: ${bounds.left}`);
+  div.style.cssText = `top: ${over ? top - h : bottom + 10}px;
+    left: ${left + (bounds.right - bounds.left) / 2 - w / 2}px;
+  `;
+  console.log(`${bounds.left},${bounds.top} ${bounds.right},${bounds.bottom}`);
+  hide('button');
 };
 
 const onTranslate = m => {
@@ -16,8 +31,8 @@ const onTranslate = m => {
       .catch(e => console.err(`rejected, ${e}`));
 };
 
-const hideFFTranslateButtons = () => {
-  const b = document.getElementById('fftranslate-button');
+const hide = partialId => {
+  const b = document.getElementById(`fftranslate-${partialId}`);
   if (b) {
     b.remove();
   }
@@ -25,13 +40,15 @@ const hideFFTranslateButtons = () => {
 
 const onMouseDown = e => {
   if (e.target.id !== 'fftranslate-img')
-    hideFFTranslateButtons();
+    hide('button');
+  if (e.target.id !== 'fftranslate-popup')
+    hide('popup');
 }
 
 const onButtonClicked = e => {
   e.preventDefault();
   onTranslate();
-  hideFFTranslateButtons();
+  hide('button');
 };
 
 const showButton = () => {
@@ -88,6 +105,13 @@ const css = `
     background-color: white;
     padding: 2px;
     border-radius: 16px;
+  }
+  #fftranslate-popup {
+    position: absolute;
+    z-index: 9999;
+    background-color: #fcfcfc;
+    border: 1px solid #ddd;
+    padding: 1em;
   }
 `;
 style.appendChild(document.createTextNode(css));
