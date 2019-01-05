@@ -1,14 +1,17 @@
 const BTN_IMG_SIZE = 32;
 const BTN_IMG_PADDING = 2;
 const BTN_SIZE = BTN_IMG_SIZE + 2 * BTN_IMG_PADDING;
-var selection;
-var selectedText;
+let selection;
+let selectedText;
+let mouseDownEvent;
+let translating;
 
 const getTranslateUrl = text =>
   `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURI(text)}`;
 
 const showTranslation = (selection, translated) => {
   // window.alert(translated);
+  hide('button');
   const bounds = selection.getRangeAt(0).getBoundingClientRect();
   const top = bounds.top + window.scrollY;
   const bottom = bounds.bottom + window.scrollY;
@@ -29,11 +32,11 @@ const showTranslation = (selection, translated) => {
   div.style.cssText = `opacity: 1; top: ${over ? top - h : bottom + 10}px;
     left: ${left + (bounds.right - bounds.left) / 2 - w / 2}px;
   `;
-  hide('button');
 };
 
 const onTranslate = m => {
   // console.log(`Translating: "${selectedText}"`);
+  translating = true;
   const url = getTranslateUrl(selectedText);
   if (selectedText)
     fetch(url)
@@ -48,12 +51,12 @@ const onTranslate = m => {
 
 const hide = partialId => {
   const b = document.getElementById(`fftranslate-${partialId}`);
-  if (b) {
-    b.remove();
-  }
+  if (b) b.remove();
+  if (partialId === 'popup') translating = false;
 };
 
 const onMouseDown = e => {
+  mouseDownEvent = e;
   if (e.target.id !== 'fftranslate-img')
     hide('button');
   if (e.target.id !== 'fftranslate-popup')
@@ -66,7 +69,11 @@ const onButtonClicked = e => {
   hide('button');
 };
 
-const showButton = () => {
+const showButton = e => {
+  // don't show the button again if we're showing the popup already
+  if (translating) return;
+
+  const { pageX, pageY } = e;
   selection = window.getSelection();
   const range = selection.getRangeAt(0);
 
@@ -75,15 +82,28 @@ const showButton = () => {
 
   selectedText = selection.toString().trim();
 
-  // center the button with selection
   const bounds = range.getBoundingClientRect();
-  const left = bounds.left + window.scrollX + (bounds.right - bounds.left) / 2;
   const absoluteTop = bounds.top + window.scrollY;
-  const buttonTop = Math.max(window.scrollY, absoluteTop - BTN_SIZE);
+  const absoluteBottom = bounds.bottom + window.scrollY;
+  const absoluteLeft = bounds.left + window.scrollX;
+  const absoluteRight = bounds.right + window.scrollX;
+  const selectingUp = pageY < mouseDownEvent.pageY;
+
+  // some black magic to try and stick the button as close to the cursor as
+  // possible, unless the cursor gets away from the selection
+  const buttonTop = Math.max(
+    window.scrollY,
+    selectingUp ?
+      Math.max(absoluteTop, pageY) - BTN_SIZE
+      : Math.min(absoluteBottom, pageY));
+
+  const buttonLeft = pageX < absoluteLeft ?
+    Math.max(window.scrollX, Math.max(pageX, absoluteLeft) - BTN_SIZE)
+    : Math.min(absoluteRight, pageX);
 
   const div = document.createElement('div');
   div.id = 'fftranslate-button';
-  div.style.cssText = `top: ${buttonTop}px; left: ${left - BTN_SIZE / 2}px;`;
+  div.style.cssText = `top: ${buttonTop}px; left: ${buttonLeft}px;`;
   div.onclick = onButtonClicked;
 
   const img = document.createElement('img');
@@ -95,7 +115,8 @@ const showButton = () => {
 
 browser.runtime.onMessage.addListener(onTranslate);
 document.onmousedown = onMouseDown;
-document.onmouseup = showButton;
+// delay showButton(), lest we get the stale selection on win.getSelection()
+document.onmouseup = e => setTimeout(() => showButton(e), 50);
 
 const head = document.getElementsByTagName('head')[0];
 const style = document.createElement('style');
