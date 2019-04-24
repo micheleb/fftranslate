@@ -21,7 +21,7 @@ const showTranslation = (selection, translated) => {
 
   const div = document.createElement("div");
   div.id = "fftranslate-popup";
-  div.innerHTML = translated;
+  div.textContent = translated;
   // add the (invisible) popup to the DOM to measure it...
   div.style.cssText = "opacity: 0;";
   document.body.appendChild(div);
